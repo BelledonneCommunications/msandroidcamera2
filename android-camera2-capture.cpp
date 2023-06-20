@@ -131,7 +131,7 @@ struct AndroidCamera2Context {
 static void android_camera2_capture_stop(AndroidCamera2Context *d);
 
 static void android_camera2_capture_device_on_disconnected(void *context, ACameraDevice *device) {
-    ms_message("[Camera2 Capture] Camera %s is disconnected", ACameraDevice_getId(device));
+    ms_message("[Camera2 Capture] Camera %s is diconnected", ACameraDevice_getId(device));
 
 	AndroidCamera2Context *d = (AndroidCamera2Context *)context;
 	if (d != nullptr) android_camera2_capture_stop(d);
@@ -560,6 +560,9 @@ static void android_camera2_capture_stop(AndroidCamera2Context *d) {
 	}
 	ms_mutex_unlock(&d->imageReaderMutex);
 
+	// Seems to provoke an ANR on some devices if the camera close is done after the capture session
+	android_camera2_capture_close_camera(d);
+
 	if (d->captureSession) {
 		camera_status_t camera_status = ACameraCaptureSession_abortCaptures(d->captureSession);
 		if (camera_status != ACAMERA_OK) {
@@ -622,9 +625,6 @@ static void android_camera2_capture_stop(AndroidCamera2Context *d) {
 		d->captureSessionOutputContainer = nullptr;
 		ms_message("[Camera2 Capture] Capture session output container freed");
 	}
-
-	android_camera2_capture_close_camera(d);
-
 	ms_mutex_lock(&d->imageReaderMutex);
 	if (d->imageReader) {
 		AImageReader_delete(d->imageReader);
