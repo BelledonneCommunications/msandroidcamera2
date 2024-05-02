@@ -1204,14 +1204,20 @@ void android_camera2_capture_detect(MSWebCamManager *obj) {
 			cam->data = device;
 
 			if ((back_facing && !back_facing_found) || (!back_facing && !front_facing_found)) {
-				ms_web_cam_manager_prepend_cam(obj, cam);
-				if (back_facing) {
-					back_facing_found = true;
+				if (angle == -1) {
+					ms_warning("[Camera2 Capture] [%s] facing camera has an angle of -1, skipping this one [%s]", facing.c_str(), camId);
+					ms_web_cam_destroy(cam);
 				} else {
-					front_facing_found = true;
+					ms_web_cam_manager_prepend_cam(obj, cam);
+					if (back_facing) {
+						back_facing_found = true;
+					} else {
+						front_facing_found = true;
+					}
 				}
 			} else {
 				ms_warning("[Camera2 Capture] A camera with the same direction as already been added, skipping this one");
+				ms_web_cam_destroy(cam);
 			}
 
 			ACameraMetadata_free(cameraMetadata);
